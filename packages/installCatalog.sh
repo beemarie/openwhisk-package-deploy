@@ -46,17 +46,19 @@ PACKAGE_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 export WSK_CONFIG_FILE= # override local property file to avoid namespace clashes
 
-echo Installing Deploy package.
+echo Installing Deploy2 package.
 
-$WSK_CLI -i --apihost "$EDGEHOST" package update --auth "$AUTH" --shared yes deploy \
+$WSK_CLI -i --apihost "$EDGEHOST" package update --auth "$AUTH" --shared yes deploy2 \
      -a description 'Alarms and periodic utility' \
      -a parameters '[ {"message":"theMessage", "required":true} ]' \
      -p apihost "$APIHOST" \
      -p trigger_payload ''
 
-$WSK_CLI -i --apihost "$EDGEHOST" action update --kind nodejs:6 --auth "$AUTH" deploy/wskdeploy "$PACKAGE_HOME/action/hello_world.js" \
-     -a description 'Fire trigger when alarm occurs' \
-     -a feed true
+$WSK_CLI -i --apihost "$EDGEHOST" action update --auth "$AUTH" deploy2/wskdeploy "$PACKAGE_HOME/actions/deploy.js" \
+     -a description 'Creates an action that allows you to run wskdeploy from OpenWhisk' \
+     -a parameters '[ {"name":"repo", "required":true, "bindTime":true, "description": "The GitHub repository of the Blueprint"}, {"name":"manifestPath", "required":false, "bindTime":true, "description": "The relative path to the manifest file from the GitHub repo"},{"name":"wskApiHost", "required":false, "description": "The URL of the OpenWhisk api host you want to use"}, {"name":"envData", "required":false, "description": "Blueprint-specific environment data object"} ]' \
+     -a sampleInput '{"repo":"github.com/my_blueprint", "manifestPath":"runtimes/swift", "wskApiHost":"openwhisk.stage1.ng.bluemix.net", "envData": "{\"KAFKA_ADMIN_URL\":\"https://my_kafka_service\", \"MESSAGEHUB_USER\":\"MY_MESSAGEHUB_USERNAME\"}"}' \
+     --docker "openwhisk/wskdeploy:0.8.9.1"
 
 if [ -n "$WORKERS" ];
 then
@@ -73,16 +75,16 @@ else
 fi
 
 # make alarmWebAction.zip
-cd action
-npm install
+# cd action
+# npm install
+#
+# if [ -e alarmWebAction.zip ];
+# then
+#     rm -rf alarmWebAction.zip
+# fi
 
-if [ -e alarmWebAction.zip ];
-then
-    rm -rf alarmWebAction.zip
-fi
+# zip -r alarmWebAction.zip package.json alarmWebAction.js node_modules
 
-zip -r alarmWebAction.zip package.json alarmWebAction.js node_modules
-
-$WSK_CLI -i --apihost "$EDGEHOST" action update --kind nodejs:6 --auth "$AUTH" alarmsWeb/alarmWebAction "$PACKAGE_HOME/action/alarmWebAction.zip" \
-    -a description 'Create/Delete a trigger in alarms provider Database' \
-    --web true
+# $WSK_CLI -i --apihost "$EDGEHOST" action update --kind nodejs:6 --auth "$AUTH" alarmsWeb/alarmWebAction "$PACKAGE_HOME/actions/alarmWebAction.zip" \
+#     -a description 'Create/Delete a trigger in alarms provider Database' \
+#     --web true
