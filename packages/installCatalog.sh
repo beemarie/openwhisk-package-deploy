@@ -14,7 +14,7 @@ WSK_CLI="$OPENWHISK_HOME/bin/wsk"
 
 if [ $# -eq 0 ]
 then
-echo "Usage: ./installCatalog.sh <authkey> <edgehost> <dburl> <dbprefix> <apihost>"
+echo "Usage: ./installCatalog.sh <authkey> <edgehost> <apihost>"
 fi
 
 AUTH="$1"
