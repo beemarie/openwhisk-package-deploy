@@ -2,15 +2,16 @@
 
 set -e
 set -x
+: ${OPENWHISK_HOME:?"OPENWHISK_HOME must be set and non-empty"}
+WSK_CLI="$OPENWHISK_HOME/bin/wsk"
 
 if [ $# -eq 0 ]
 then
-    echo "Usage: ./uninstall.sh $APIHOST $AUTH $WSK_CLI"
+    echo "Usage: ./uninstall.sh $APIHOST $AUTH"
 fi
 
 APIHOST="$1"
 AUTH="$2"
-WSK_CLI="$3"
 
 echo Uninstalling Template Package \
 
