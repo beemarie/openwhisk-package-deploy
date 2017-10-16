@@ -1,8 +1,12 @@
 # Build script for Travis-CI.
 
 SCRIPTDIR=$(cd $(dirname "$0") && pwd)
-WHISKDIR="$SCRIPTDIR/../../openwhisk"
+WHISKDIR="$ROOTDIR/../openwhisk"
 ROOTDIR="$SCRIPTDIR/../.."
+
+echo SCRIPTDIR
+echo WHISKDIR
+echo ROOTDIR
 
 cd $WHISKDIR
 
