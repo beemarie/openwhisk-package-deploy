@@ -14,6 +14,6 @@ WSK_CLI="$3"
 
 echo Uninstalling Template Package \
 
-$WSK_CLI --apihost $APIHOST action delete -i --auth $AUTH packageTemplate/helloworld
+$WSK_CLI --apihost $APIHOST action delete -i --auth $AUTH deploy2/wskdeploy
 
-$WSK_CLI --apihost $APIHOST package delete -i --auth $AUTH packageTemplate
+$WSK_CLI --apihost $APIHOST package delete -i --auth $AUTH deploy2
