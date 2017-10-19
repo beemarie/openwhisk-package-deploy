@@ -11,16 +11,11 @@ The package includes the following actions.
 
 ## wskdeploy Parameters
 The `/whisk.system/deploy/wskdeploy` package deploys OpenWhisk assets from a github repository with a defining manifest.  The parameters are as follows:
-- `repo`: A string specifying the location of the github repository containing the assets to be deployed.
+- `repo`: A string specifying the location of the github repository containing the assets to be deployed. For example: `https://github.com/ibm-functions/blueprint-cloudant-trigger`
 
-  For example: `https://github.com/ibm-functions/blueprint-cloudant-trigger`
+- `manifestPath`: Optional. A string specifying the location of the folder enclosing the manifest.yaml file. For example: `src/openwhisk`. If this parameter is not provided, it will default to the root of the github repo.
 
-- `manifestPath`: Optional. A string specifying the location of the folder enclosing the manifest.yaml file.
-
-  For example: `src/openwhisk`. If this parameter is not provided, it will default to the root of the github repo.
-
-- `envData`: Optional. A string with a json object providing any optional enviroment data specified by the manifest.yaml file.  
-  For example:
+- `envData`: Optional. A string with a json object providing any optional enviroment data specified by the manifest.yaml file. For example:
   ```
   "{
     "CLOUDANT_HOSTNAME": "some-hostname-bluemix.cloudant.com",
