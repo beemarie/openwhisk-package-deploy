@@ -7,7 +7,7 @@ let command = '';
 
 /**
  * Action to deploy openwhisk elements from a compliant repository
- *  @param {string} repo - github url containing the manifest and elements to deploy
+ *  @param {string} gitUrl - github url containing the manifest and elements to deploy
  *  @param {string} manifestPath - the path to the manifest file, e.g. "runtimes/node"
  *  @param {object} envData - (optional) some specific details such as cloudant username or cloudant password
  *  @return {object} Promise
@@ -35,7 +35,7 @@ function main(params) {
     const { wskApiHost, wskAuth } = getWskApiAuth(params);
 
     // Extract the name of the repo for the tmp directory
-    const repoSplit = params.repo.split('/');
+    const repoSplit = params.gitUrl.split('/');
     const repoName = repoSplit[repoSplit.length - 1];
     const localDirName = `${__dirname}/tmp/${repoName}`;
 
@@ -252,16 +252,16 @@ function checkIfDirExists(dirname) {
  */
 function convertParamsToRemote(params) {
   const {
-    repo,
+    gitUrl,
   } = params;
-  if (!repo) {
+  if (!gitUrl) {
     return {
-      error: 'Please enter the GitHub repo in params',
+      error: 'Please enter the GitHub repo url in params',
     };
-  } else if (repo.indexOf('https://') === 0) { //Check if `https://` was included in the repo, prepend it if not
-    return repo;
+  } else if (gitUrl.indexOf('https://') === 0) { //Check if `https://` was included in the git Url, prepend it if not
+    return gitUrl;
   } else {
-    return `https://${repo}`;
+    return `https://${gitUrl}`;
   }
 }
 

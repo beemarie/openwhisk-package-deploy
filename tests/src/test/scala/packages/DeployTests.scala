@@ -46,7 +46,7 @@ class DeployTests extends TestHelpers
     //test to create the hello world blueprint from github
     "Deploy Package" should "create the hello world action from github url" in {
       val run = wsk.action.invoke(deployAction, Map(
-        "repo" -> helloWorldRepo.toJson,
+        "gitUrl" -> helloWorldRepo.toJson,
         "manifestPath" -> manifestPath.toJson))
         withActivation(wsk.activation, run) {
           activation =>
@@ -75,14 +75,14 @@ class DeployTests extends TestHelpers
         withActivation(wsk.activation, run) {
           activation =>
           activation.response.success shouldBe false
-          activation.response.result.get.toString should include("Please enter the GitHub repo in params")
+          activation.response.result.get.toString should include("Please enter the GitHub repo url in params")
         }
     }
 
     //test to create a blueprint with a nonexistant github repo provided
     "Deploy Package" should "return error if there is an nonexistant repo provided" in {
       val run = wsk.action.invoke(deployAction, Map(
-        "repo" -> incorrectGithubRepo.toJson,
+        "gitUrl" -> incorrectGithubRepo.toJson,
         "manifestPath" -> manifestPath.toJson))
         withActivation(wsk.activation, run) {
           activation =>
@@ -94,7 +94,7 @@ class DeployTests extends TestHelpers
     //test to create a blueprint with a nonexistant github repo provided
     "Deploy Package" should "return succeed if useless envData is provided" in {
       val run = wsk.action.invoke(deployAction, Map(
-        "repo" -> helloWorldRepo.toJson,
+        "gitUrl" -> helloWorldRepo.toJson,
         "manifestPath" -> manifestPath.toJson,
         "envData" -> uselessEnvData.toJson))
         withActivation(wsk.activation, run) {

@@ -7,11 +7,11 @@ The package includes the following actions.
 | Entity | Type | Parameters | Description |
 | --- | --- | --- | --- |
 | `/whisk.system/deploy` | package |  | Package to deploy OpenWhisk programming model elements |
-| `/whisk.system/deploy/wskdeploy` | action | repo, manifestPath, envData | Deploy from github repositories with the appropriate structure and a defining manifest. |
+| `/whisk.system/deploy/wskdeploy` | action | gitUrl, manifestPath, envData | Deploy from github repositories with the appropriate structure and a defining manifest. |
 
 ## wskdeploy Parameters
 The `/whisk.system/deploy/wskdeploy` package deploys OpenWhisk assets from a github repository with a defining manifest.  The parameters are as follows:
-- `repo`: A string specifying the location of the github repository containing the assets to be deployed. For example: `https://github.com/ibm-functions/blueprint-cloudant-trigger`
+- `gitUrl`: A string specifying the location of the github repository containing the assets to be deployed. For example: `https://github.com/ibm-functions/blueprint-cloudant-trigger`
 
 - `manifestPath`: Optional. A string specifying the location of the folder enclosing the manifest.yaml file. For example: `src/openwhisk`. If this parameter is not provided, it will default to the root of the github repo.
 
@@ -51,11 +51,11 @@ If you would like the manifest.yaml file to be in a different location, you can 
 
 With the repository created, you can now deploy from it.
 
-- For the most simple manifests, with no associated services you can run the command with a repo parameter and a manifestPath parameter which tells wskdeploy which language you want from your project.
+- For the most simple manifests, with no associated services you can run the command with a gitUrl parameter and a manifestPath parameter which tells wskdeploy which language you want from your project.
 
   ```
   wsk action invoke /whisk.system/deploy/wskdeploy
-  -p repo https://github.com/ibm-functions/blueprint-hello-world/
+  -p gitUrl https://github.com/ibm-functions/blueprint-hello-world/
   -p manifestPath "runtimes/node"
   ```
 
@@ -71,10 +71,10 @@ With the repository created, you can now deploy from it.
    "CLOUDANT_DATABASE":"database_name"}"
   ```
 
-- Once your package binding is configured with your service information, you can invoke it with the repo and manifestPath parameters.
+- Once your package binding is configured with your service information, you can invoke it with the gitUrl and manifestPath parameters.
 
   ```
   wsk action invoke myDeploy/wskdeploy
-  -p repo https://github.com/ibm-functions/blueprint-hello-world/
+  -p gitUrl https://github.com/ibm-functions/blueprint-hello-world/
   -p manifestPath "runtimes/node"
   ```
