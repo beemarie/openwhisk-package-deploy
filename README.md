@@ -56,25 +56,5 @@ With the repository created, you can now deploy from it.
   ```
   wsk action invoke /whisk.system/deploy/wskdeploy
   -p gitUrl https://github.com/ibm-functions/blueprint-hello-world/
-  -p manifestPath "runtimes/node"
-  ```
-
-## Create a package binding and then run the wskdeploy command
-
-- For more complex manifests with associated services you will need to provide an envData variable with the required information.  You can create a package binding that is configured with your service information.
-
-  ```
-  wsk package bind /whisk.system/deploy myDeploy -p envData
-  "{"CLOUDANT_USERNAME":"username",
-  "CLOUDANT_PASSWORD":"password",
-   "CLOUDANT_HOSTNAME":"hostname",
-   "CLOUDANT_DATABASE":"database_name"}"
-  ```
-
-- Once your package binding is configured with your service information, you can invoke it with the gitUrl and manifestPath parameters.
-
-  ```
-  wsk action invoke myDeploy/wskdeploy
-  -p gitUrl https://github.com/ibm-functions/blueprint-hello-world/
-  -p manifestPath "runtimes/node"
+  -p manifestPath "src/openwhisk"
   ```

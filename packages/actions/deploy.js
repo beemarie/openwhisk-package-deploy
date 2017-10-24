@@ -8,29 +8,30 @@ let command = '';
 /**
  * Action to deploy openwhisk elements from a compliant repository
  *  @param {string} gitUrl - github url containing the manifest and elements to deploy
- *  @param {string} manifestPath - the path to the manifest file, e.g. "runtimes/node"
+ *  @param {string} manifestPath - (optional) the path to the manifest file, e.g. "openwhisk/src"
  *  @param {object} envData - (optional) some specific details such as cloudant username or cloudant password
  *  @return {object} Promise
  */
 function main(params) {
   return new Promise((resolve, reject) => {
-    // Either build the remote URL for simple-git or build error
-    const remoteOrError = convertParamsToRemote(params);
-
-    // We received an error, reject with it
-    if (typeof remoteOrError !== 'string') {
-      const { error } = remoteOrError;
-      reject(error);
-    }
-
-    const remote = remoteOrError;
-
-    // Grab optional envData and deployPath params for wskdeploy
-    const {
+    // Grab optional envData and manifestPath params for wskdeploy
+    let {
       envData,
       manifestPath,
+      gitUrl
     } = params;
 
+    // confirm gitUrl was provided as a parameter
+    if (!gitUrl) {
+      reject({
+        error: 'Please enter the GitHub repo url in params',
+      });
+    }
+
+    // if no manifestPath was provided, use current directory
+    if (!manifestPath) {
+      manifestPath = '.';
+    }
     // Grab wsp api host and auth from params, or process.env
     const { wskApiHost, wskAuth } = getWskApiAuth(params);
 
@@ -44,9 +45,9 @@ function main(params) {
         // The directory does not exist, clone BP from Github
         if (!res.skipClone) {
           return git()
-            .clone(remote, localDirName, (err) => {
+            .clone(gitUrl, localDirName, (err) => {
               if (err) {
-                reject('There was a problem cloning from github.', err);
+                reject('There was a problem cloning from github.  Does that github repo exist?  Does it begin with http://?', err);
               }
               resolve({
                 repoDir: localDirName,
@@ -76,35 +77,6 @@ function main(params) {
             });
         }
       });
-  })
-  .then((data) => {
-    console.log('Creating config file for wskdeploy');
-    const {
-      wskAuth,
-      wskApiHost,
-    } = data;
-
-    // Create a .wskprops in the root for wskdeploy to reference
-    command = `echo "AUTH=${wskAuth}\nAPIHOST=${wskApiHost}\nNAMESPACE=_" > .wskprops`;
-
-    return new Promise((resolve, reject) => {
-      exec(command, { cwd: `/root/` }, (err, stdout, stderr) => {
-        if (err) {
-          reject('Error creating .wskdeploy props', err);
-        }
-        if (stdout) {
-          console.log('stdout from creating .wskdeploy props:');
-          console.log(stdout);
-          console.log('type');
-          console.log(typeof stdout);
-        }
-        if (stderr) {
-          console.log('stderr from creating .wskdeploy.yaml props:');
-          console.log(stderr);
-        }
-        resolve(data);
-      });
-    });
   })
   .then((data) => {
     const {
@@ -152,6 +124,8 @@ function main(params) {
   })
   .then((data) => {
     const {
+      wskAuth,
+      wskApiHost,
       manifestPath,
       manifestFileName,
       repoDir,
@@ -169,7 +143,7 @@ function main(params) {
     }
 
     // Send 'y' to the wskdeploy command so it will actually run the deployment
-    command = `printf 'y' | ${__dirname}/wskdeploy -v -m ${manifestFileName} --config /root/.wskprops`;
+    command = `printf 'y' | ${__dirname}/wskdeploy -v -m ${manifestFileName} --auth ${wskAuth} --apihost ${wskApiHost}`;
 
     return new Promise((resolve, reject) => {
       if (fs.existsSync(`${repoDir}/${manifestPath}/${manifestFileName}`)) {
@@ -178,10 +152,7 @@ function main(params) {
             reject('Error running `./wskdeploy`: ', err);
           }
           if (stdout) {
-            console.log('stdout from wskDeploy:');
-            console.log(stdout);
-            console.log('type');
-            console.log(typeof stdout);
+            console.log('stdout from wskDeploy: ', stdout, ' type ', typeof stdout);
 
             if (typeof stdout === 'string') {
               try {
@@ -193,14 +164,13 @@ function main(params) {
 
             if (typeof stdout === 'object') {
               if (stdout.error) {
-                stdout.descriptiveError = 'Could not successfully run wskdeploy. Did you provide the needed environment variables?';
+                stdout.descriptiveError = 'Could not successfully run wskdeploy. Please run again with the verbose flag, -v.';
                 reject(stdout);
               }
             }
           }
           if (stderr) {
-            console.log('stderr from wskDeploy:');
-            console.log(stderr);
+            console.log('stderr from wskDeploy: ', stderr);
           }
 
           console.log('Finished! Resolving now');
@@ -242,27 +212,6 @@ function checkIfDirExists(dirname) {
       });
     });
   });
-}
-
-/**
- * Checks that a GitHub username, password (or access token), and repo
- *  are all passed in the params
- * @param  {[Object]} params    [Params object]
- * @return {[String || Object]} [String of remote URL if successful, object if error]
- */
-function convertParamsToRemote(params) {
-  const {
-    gitUrl,
-  } = params;
-  if (!gitUrl) {
-    return {
-      error: 'Please enter the GitHub repo url in params',
-    };
-  } else if (gitUrl.indexOf('https://') === 0) { //Check if `https://` was included in the git Url, prepend it if not
-    return gitUrl;
-  } else {
-    return `https://${gitUrl}`;
-  }
 }
 
 /**

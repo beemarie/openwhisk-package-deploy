@@ -37,7 +37,7 @@ PACKAGE_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 export WSK_CONFIG_FILE= # override local property file to avoid namespace clashes
 
-echo Installing Deploy2 package.
+echo Installing Deploy package.
 
 $WSK_CLI -i --apihost "$EDGEHOST" package update --auth "$AUTH" --shared yes deploy \
      -a description 'Alarms and periodic utility' \
