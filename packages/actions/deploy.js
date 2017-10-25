@@ -39,44 +39,20 @@ function main(params) {
     const repoSplit = params.gitUrl.split('/');
     const repoName = repoSplit[repoSplit.length - 1];
     const localDirName = `${__dirname}/tmp/${repoName}`;
-
-    return checkIfDirExists(localDirName)
-      .then((res) => {
-        // The directory does not exist, clone BP from Github
-        if (!res.skipClone) {
-          return git()
-            .clone(gitUrl, localDirName, (err) => {
-              if (err) {
-                reject('There was a problem cloning from github.  Does that github repo exist?  Does it begin with http://?', err);
-              }
-              resolve({
-                repoDir: localDirName,
-                manifestPath,
-                manifestFileName: 'manifest.yaml',
-                wskAuth,
-                wskApiHost,
-                envData,
-              });
-            });
-        } else {
-          // The directory exists already, check if there is anything new
-          //  and pull if so
-          return git(localDirName)
-            .pull((err, update) => {
-              if (err) {
-                reject('Error pulling most recent data ', err);
-              }
-              resolve({
-                repoDir: localDirName,
-                manifestPath,
-                manifestFileName: 'manifest.yaml',
-                wskAuth,
-                wskApiHost,
-                envData,
-              });
-            });
-        }
+    return git()
+    .clone(gitUrl, localDirName, ['--depth', '1'], (err, data) => {
+      if (err) {
+        reject('There was a problem cloning from github.  Does that github repo exist?  Does it begin with http?', err);
+      }
+      resolve({
+        repoDir: localDirName,
+        manifestPath,
+        manifestFileName: 'manifest.yaml',
+        wskAuth,
+        wskApiHost,
+        envData,
       });
+    });
   })
   .then((data) => {
     const {
@@ -172,7 +148,21 @@ function main(params) {
           if (stderr) {
             console.log('stderr from wskDeploy: ', stderr);
           }
-
+          //TODO: Delete folder here, need to use fs-extra or some other modules
+          var deleteFolderRecursive = function(path) {
+            if (fs.existsSync(path)) {
+              fs.readdirSync(path).forEach(function(file, index){
+                var curPath = path + "/" + file;
+                if (fs.lstatSync(curPath).isDirectory()) { // recurse
+                  deleteFolderRecursive(curPath);
+                } else { // delete file
+                  fs.unlinkSync(curPath);
+                }
+              });
+              fs.rmdirSync(path);
+            }
+          };
+          deleteFolderRecursive(repoDir);
           console.log('Finished! Resolving now');
           resolve({
             status: 'success',
@@ -182,35 +172,7 @@ function main(params) {
       } else {
         reject(`Error loading ${repoDir}/${manifestPath}/${manifestFileName}. Does a manifest file exist?`);
       }
-    });
-  });
-}
-
-/**
- * Checks if the BP directory already exists on this invoker
- * @TODO: Optimize this to use GH tags so we can see whether or not we still need to pull a new version
- * @param  {[string]} dirname [string of directory path to check]
- * @return {[Promise]}        [Whether or not directory exists]
- */
-function checkIfDirExists(dirname) {
-  return new Promise((resolve, reject) => {
-    fs.stat(dirname, (err, stats) => {
-      if (err) {
-        if (err.code === 'ENOENT') {
-          console.log(`Directory ${dirname} does not exist`);
-          resolve({
-            skipClone: false
-          });
-        } else {
-          reject(`Error checking if ${dirname} exists`, err);
-        }
-      }
-      // Directory does exist, skip git clone
-      // @TODO: Add optimization/caching here if repo exists on invoker already
-      resolve({
-        skipClone: true
-      });
-    });
+    })
   });
 }
 
@@ -232,8 +194,6 @@ function getWskApiAuth(params) {
   if (!wskAuth) {
     wskAuth = process.env.__OW_API_KEY;
   }
-
-  console.log(`Using wskApiHost: ${wskApiHost} and wskAuth: ${wskAuth}`);
 
   return {
     wskApiHost,
