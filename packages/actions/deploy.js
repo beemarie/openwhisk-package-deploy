@@ -119,10 +119,13 @@ function main(params) {
     }
 
     // Send 'y' to the wskdeploy command so it will actually run the deployment
-    command = `printf 'y' | ${__dirname}/wskdeploy -m ${manifestFileName} --auth ${wskAuth} --apihost ${wskApiHost}`;
+    command = `printf 'y' | ${__dirname}/wskdeploy -v -m ${manifestFileName} --auth ${wskAuth} --apihost ${wskApiHost}`;
 
     return new Promise((resolve, reject) => {
-      if (fs.existsSync(`${repoDir}/${manifestPath}/${manifestFileName}`)) {
+      const manifestFilePath = `${repoDir}/${manifestPath}/${manifestFileName}`
+      if (!fs.existsSync(manifestFilePath)) {
+        reject(`Error loading ${manifestFilePath}. Does a manifest file exist?`);
+      } else {
         exec(command, execOptions, (err, stdout, stderr) => {
           if (err) {
             reject('Error running `./wskdeploy`: ', err);
@@ -169,8 +172,6 @@ function main(params) {
             success: true,
           });
         });
-      } else {
-        reject(`Error loading ${repoDir}/${manifestPath}/${manifestFileName}. Does a manifest file exist?`);
       }
     })
   });

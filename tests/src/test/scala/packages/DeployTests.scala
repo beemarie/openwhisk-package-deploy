@@ -34,20 +34,32 @@ class DeployTests extends TestHelpers
     val wsk = new Wsk()
 
     //set parameters for deploy tests
-    val helloWorldRepo = "https://github.com/ibm-functions/blueprint-hello-world"
-    val cloudantTriggerRepo = "https://github.com/ibm-functions/blueprint-cloudant-trigger"
-    val incorrectGithubRepo = "https://github.com/ibm-functions/blueprint-hello-world-incorrect"
-    val manifestPath = "runtimes/node"
-    val incorrectManifestPath = "runtimes/none"
+    val deployTestRepo = "https://github.com/beemarie/openwhisk-package-deploy"
+    val incorrectGithubRepo = "https://github.com/beemarie/openwhisk-package-deploy-incorrect"
+    val malformedRepoUrl = "github.com/ibm-functions/blueprint-hello-world"
+    val helloWorldPath = "tests/src/test/scala/testFixtures/helloWorld"
+    val helloWorldWithNoManifest = "tests/src/stest/scala/testFixtures/helloWorldNoManifest"
+    val incorrectManifestPath = "does/not/exist"
     val uselessEnvData = "\"something\":\"useless\""
+
     val deployAction = "/whisk.system/deploy/wskdeploy"
-    val helloWorldAction = "openwhisk-helloworld/helloworld"
+
+
+    // val helloWorldRepo = "https://github.com/ibm-functions/blueprint-hello-world"
+    // val helloWorldBTest = "https://github.com/beemarie/owbp-hello-world-params"
+    // val cloudantTriggerRepo = "https://github.com/ibm-functions/blueprint-cloudant-trigger"
+    // val incorrectGithubRepo = "https://github.com/ibm-functions/blueprint-hello-world-incorrect"
+    // val malformedRepoUrl = "github.com/ibm-functions/blueprint-hello-world"
+    // val incorrectManifestPath = "runtimes/none"
+    // val uselessEnvData = "\"something\":\"useless\""
+    //val deployAction = "/whisk.system/deploy/wskdeploy"
+    // val helloWorldAction = "openwhisk-helloworld/helloworld"
 
     //test to create the hello world blueprint from github
     "Deploy Package" should "create the hello world action from github url" in {
       val run = wsk.action.invoke(deployAction, Map(
-        "gitUrl" -> helloWorldRepo.toJson,
-        "manifestPath" -> manifestPath.toJson))
+        "gitUrl" -> deployTestRepo.toJson,
+        "manifestPath" -> helloWorldPath.toJson))
         withActivation(wsk.activation, run) {
           activation =>
           activation.response.success shouldBe true
@@ -56,22 +68,10 @@ class DeployTests extends TestHelpers
         }
     }
 
-    //test to invoke the hello world action from github
-    "Deploy Package" should "run the hello world action after it's created" in {
-      val run = wsk.action.invoke(helloWorldAction, Map(
-        "message" -> "Mindy".toJson))
-        val responseMessage = "you sent me Mindy".toJson
-        withActivation(wsk.activation, run) {
-          activation =>
-          activation.response.success shouldBe true
-          activation.response.result shouldBe Some(JsObject("message" -> responseMessage))
-        }
-    }
-
     //test to create a blueprint with no github repo provided
     "Deploy Package" should "return error if there is no github repo provided" in {
       val run = wsk.action.invoke(deployAction, Map(
-        "manifestPath" -> manifestPath.toJson))
+        "manifestPath" -> helloWorldPath.toJson))
         withActivation(wsk.activation, run) {
           activation =>
           activation.response.success shouldBe false
@@ -83,7 +83,7 @@ class DeployTests extends TestHelpers
     "Deploy Package" should "return error if there is an nonexistant repo provided" in {
       val run = wsk.action.invoke(deployAction, Map(
         "gitUrl" -> incorrectGithubRepo.toJson,
-        "manifestPath" -> manifestPath.toJson))
+        "manifestPath" -> helloWorldPath.toJson))
         withActivation(wsk.activation, run) {
           activation =>
           activation.response.success shouldBe false
@@ -91,11 +91,23 @@ class DeployTests extends TestHelpers
         }
     }
 
-    //test to create a blueprint with a nonexistant github repo provided
+    //test to create a blueprint with a malformed github repo
+    "Deploy Package" should "return error if there is a malformed gitUrl provided" in {
+      val run = wsk.action.invoke(deployAction, Map(
+        "gitUrl" -> malformedRepoUrl.toJson,
+        "manifestPath" -> helloWorldPath.toJson))
+        withActivation(wsk.activation, run) {
+          activation =>
+          activation.response.success shouldBe false
+          activation.response.result.get.toString should include("There was a problem cloning from github.")
+        }
+    }
+
+    //test to create a blueprint with useless EnvData provided
     "Deploy Package" should "return succeed if useless envData is provided" in {
       val run = wsk.action.invoke(deployAction, Map(
-        "gitUrl" -> helloWorldRepo.toJson,
-        "manifestPath" -> manifestPath.toJson,
+        "gitUrl" -> deployTestRepo.toJson,
+        "manifestPath" -> helloWorldPath.toJson,
         "envData" -> uselessEnvData.toJson))
         withActivation(wsk.activation, run) {
           activation =>
@@ -104,5 +116,44 @@ class DeployTests extends TestHelpers
           logs should include("Action openwhisk-helloworld/helloworld has been successfully deployed.")
         }
     }
+
+    //test to create a blueprint with an incorrect manifestPath provided
+    "Deploy Package" should "return with failure if incorrect manifestPath is provided" in {
+      val run = wsk.action.invoke(deployAction, Map(
+        "gitUrl" -> deployTestRepo.toJson,
+        "manifestPath" -> incorrectManifestPath.toJson))
+        withActivation(wsk.activation, run) {
+          activation =>
+          activation.response.success shouldBe false
+          activation.response.result.get.toString should include("Does a manifest file exist?")
+        }
+    }
+
+    //test to create a blueprint with manifestPath provided, but no manifestFile existing
+    "Deploy Package" should "return with failure if no manifest exists at manifestPath" in {
+      val run = wsk.action.invoke(deployAction, Map(
+        "gitUrl" -> deployTestRepo.toJson,
+        "manifestPath" -> helloWorldWithNoManifest.toJson))
+        withActivation(wsk.activation, run) {
+          activation =>
+          activation.response.success shouldBe false
+          activation.response.result.get.toString should include("Does a manifest file exist?")
+        }
+    }
+
+    // //test to create a blueprint with no manifestPath provided
+    // "Deploy Package" should "return with success if no manifestPath provided, but manifest.yaml exists at root" in {
+    //   val run = wsk.action.invoke(deployAction, Map(
+    //     "gitUrl" -> deployTestRepo.toJson))
+    //     withActivation(wsk.activation, run) {
+    //       activation =>
+    //       activation.response.success shouldBe true
+    //       val logs = activation.logs.get.toString
+    //       logs should include("Action openwhisk-helloworld/helloworld has been successfully deployed.")
+    //     }
+    // }
+
+    //add test for correct github repo, but no manifest path
+
 
 }
