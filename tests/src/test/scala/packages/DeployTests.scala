@@ -39,8 +39,11 @@ class DeployTests extends TestHelpers
     val malformedRepoUrl = "github.com/ibm-functions/blueprint-hello-world"
     val helloWorldPath = "tests/src/test/scala/testFixtures/helloWorld"
     val helloWorldWithNoManifest = "tests/src/stest/scala/testFixtures/helloWorldNoManifest"
+    val helloWorldPackageParam = "tests/src/test/scala/testFixtures/helloWorldPackageParam"
     val incorrectManifestPath = "does/not/exist"
-    val uselessEnvData = "\"something\":\"useless\""
+    val uselessEnvData = """{ "something": "useless" }"""
+    //val packageEnvData = "{\"PACKAGE_NAME\":\"myPackage\"}"
+    val packageEnvData = """{ "PACKAGE_NAME": "myPackage" }"""
     val deployAction = "/whisk.system/deploy/wskdeploy"
 
     //test to create the hello world blueprint from github
@@ -53,6 +56,20 @@ class DeployTests extends TestHelpers
           activation.response.success shouldBe true
           val logs = activation.logs.get.toString
           logs should include("Action openwhisk-helloworld/helloworld has been successfully deployed.")
+        }
+    }
+
+    //test to create the hello world blueprint from github with myPackage as package name
+    "Deploy Package" should "create the hello world action from github url with package myPackage" in {
+      val run = wsk.action.invoke(deployAction, Map(
+        "gitUrl" -> deployTestRepo.toJson,
+        "manifestPath" -> helloWorldPackageParam.toJson,
+        "envData" -> packageEnvData.parseJson))
+        withActivation(wsk.activation, run) {
+          activation =>
+          activation.response.success shouldBe true
+          val logs = activation.logs.get.toString
+          logs should include("Action myPackage/helloworld has been successfully deployed.")
         }
     }
 
@@ -96,7 +113,7 @@ class DeployTests extends TestHelpers
       val run = wsk.action.invoke(deployAction, Map(
         "gitUrl" -> deployTestRepo.toJson,
         "manifestPath" -> helloWorldPath.toJson,
-        "envData" -> uselessEnvData.toJson))
+        "envData" -> uselessEnvData.parseJson))
         withActivation(wsk.activation, run) {
           activation =>
           activation.response.success shouldBe true
