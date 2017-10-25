@@ -41,7 +41,6 @@ class DeployTests extends TestHelpers
     val helloWorldWithNoManifest = "tests/src/stest/scala/testFixtures/helloWorldNoManifest"
     val incorrectManifestPath = "does/not/exist"
     val uselessEnvData = "\"something\":\"useless\""
-
     val deployAction = "/whisk.system/deploy/wskdeploy"
 
     //test to create the hello world blueprint from github

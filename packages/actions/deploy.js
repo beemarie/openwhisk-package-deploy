@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 const exec = require('child_process').exec;
 const git = require('simple-git');
 const yaml = require('js-yaml');
@@ -56,50 +57,6 @@ function main(params) {
   })
   .then((data) => {
     const {
-      manifestPath,
-      repoDir,
-      envData,
-      manifestFileName
-    } = data;
-
-    return new Promise((resolve, reject) => {
-      // Check if we need to rename the package in the manifest.yaml
-      if (envData && envData.PACKAGE_NAME) {
-        fs.readFile(`${repoDir}/${manifestPath}/${manifestFileName}`, (err, manifestFileData) => {
-          if (err) {
-            reject(`Error loading ${manifestFileName} to edit the package name:`, err);
-          }
-
-          try {
-            // Load the manifest.yaml content and overwrite the name
-            const manifestYamlJSON = yaml.safeLoad(manifestFileData);
-            manifestYamlJSON.package.name = envData.PACKAGE_NAME;
-
-            fs.writeFile(`${repoDir}/${manifestPath}/manifest-changed-name.yaml`, yaml.safeDump(manifestYamlJSON), (error) => {
-              if (error) {
-                reject('Error saving new manifest.yaml file', error);
-              }
-
-              // Change the manifestFileName so we read the updated manifest
-              //  This helps in the case where one user wants to use a changed name
-              //  and then wants to use the normal name, but the invoker isn't fresh
-              //  and would accidentally use the overwritten manifest with the new name
-              data.manifestFileName = 'manifest-changed-name.yaml';
-              resolve(data);
-            });
-          } catch (e) {
-            reject('Error converting manifest.yaml to JSON', e);
-          }
-        });
-      } else {
-        // Not trying to rename package, continue as normal
-        data.envData = {};
-        resolve(data);
-      }
-    });
-  })
-  .then((data) => {
-    const {
       wskAuth,
       wskApiHost,
       manifestPath,
@@ -116,6 +73,8 @@ function main(params) {
     // If we were passed environment data (Cloudant bindings, etc.) add it to the options for `exec`
     if (envData) {
       execOptions.env = envData;
+    } else {
+      execOptions.env = {};
     }
 
     // Send 'y' to the wskdeploy command so it will actually run the deployment
@@ -127,6 +86,7 @@ function main(params) {
         reject(`Error loading ${manifestFilePath}. Does a manifest file exist?`);
       } else {
         exec(command, execOptions, (err, stdout, stderr) => {
+          deleteFolder(repoDir);
           if (err) {
             reject('Error running `./wskdeploy`: ', err);
           }
@@ -150,22 +110,8 @@ function main(params) {
           }
           if (stderr) {
             console.log('stderr from wskDeploy: ', stderr);
+            reject(stderr);
           }
-          //TODO: Delete folder here, need to use fs-extra or some other modules
-          var deleteFolderRecursive = function(path) {
-            if (fs.existsSync(path)) {
-              fs.readdirSync(path).forEach(function(file, index){
-                var curPath = path + "/" + file;
-                if (fs.lstatSync(curPath).isDirectory()) { // recurse
-                  deleteFolderRecursive(curPath);
-                } else { // delete file
-                  fs.unlinkSync(curPath);
-                }
-              });
-              fs.rmdirSync(path);
-            }
-          };
-          deleteFolderRecursive(repoDir);
           console.log('Finished! Resolving now');
           resolve({
             status: 'success',
@@ -201,5 +147,24 @@ function getWskApiAuth(params) {
     wskAuth,
   };
 }
+
+/**
+ * recursive funciton to delete a folder, must first delete items inside.
+ * @param  {string} pathToDelete    inclusive path to folder to delete
+ */
+function deleteFolder(pathToDelete) {
+  if (fs.existsSync(pathToDelete)) {
+    fs.readdirSync(pathToDelete).forEach(function(file, index){
+      var curPath = path.join(pathToDelete, file);
+      if (fs.lstatSync(curPath).isDirectory()) {
+        deleteFolder(curPath);
+      } else {
+        //unlinkSync deletes files.
+        fs.unlinkSync(curPath);
+      }
+    });
+    fs.rmdirSync(pathToDelete);
+  }
+};
 
 exports.main = main;
