@@ -119,7 +119,7 @@ function main(params) {
     }
 
     // Send 'y' to the wskdeploy command so it will actually run the deployment
-    command = `printf 'y' | ${__dirname}/wskdeploy -v -m ${manifestFileName} --auth ${wskAuth} --apihost ${wskApiHost}`;
+    command = `printf 'y' | ${__dirname}/wskdeploy -m ${manifestFileName} --auth ${wskAuth} --apihost ${wskApiHost}`;
 
     return new Promise((resolve, reject) => {
       if (fs.existsSync(`${repoDir}/${manifestPath}/${manifestFileName}`)) {
