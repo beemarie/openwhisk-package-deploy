@@ -45,6 +45,7 @@ class DeployTests extends TestHelpers
     val packageEnvData = """{ "PACKAGE_NAME": "myPackage" }"""
     val deployAction = "/whisk.system/deploy/wskdeploy"
     val helloWorldAction = "openwhisk-helloworld/helloworld"
+    val helloWorldActionPackage = "myPackage/helloworld"
 
     //test to create the hello world blueprint from github
     "Deploy Package" should "create the hello world action from github url" in {
@@ -55,14 +56,14 @@ class DeployTests extends TestHelpers
           activation =>
           activation.response.success shouldBe true
           val logs = activation.logs.get.toString
-          logs should include("Action openwhisk-helloworld/helloworld has been successfully deployed.")
+          logs should include(s"Action $helloWorldAction has been successfully deployed.")
         }
         // clean up after test
-        wsk.action.delete("openwhisk-helloworld/helloworld")
+        wsk.action.delete(helloWorldAction)
     }
 
     //test to create the hello world blueprint from github with myPackage as package name
-    "Deploy Package" should "create the hello world action from github url with package myPackage" in {
+    "Deploy Package" should s"create the $helloWorldActionPackage action from github url" in {
       val run = wsk.action.invoke(deployAction, Map(
         "gitUrl" -> deployTestRepo.toJson,
         "manifestPath" -> helloWorldPackageParam.toJson,
@@ -71,10 +72,10 @@ class DeployTests extends TestHelpers
           activation =>
           activation.response.success shouldBe true
           val logs = activation.logs.get.toString
-          logs should include("Action myPackage/helloworld has been successfully deployed.")
+          logs should include(s"Action $helloWorldActionPackage has been successfully deployed.")
         }
         // clean up after test
-        wsk.action.delete("myPackage/helloworld")
+        wsk.action.delete(helloWorldActionPackage)
     }
 
     //test to create a blueprint with no github repo provided
@@ -122,10 +123,10 @@ class DeployTests extends TestHelpers
           activation =>
           activation.response.success shouldBe true
           val logs = activation.logs.get.toString
-          logs should include("Action openwhisk-helloworld/helloworld has been successfully deployed.")
+          logs should include(s"Action $helloWorldAction has been successfully deployed.")
         }
         // clean up after test
-        wsk.action.delete("openwhisk-helloworld/helloworld")
+        wsk.action.delete(helloWorldAction)
     }
 
     //test to create a blueprint with an incorrect manifestPath provided
