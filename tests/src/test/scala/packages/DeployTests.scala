@@ -42,9 +42,9 @@ class DeployTests extends TestHelpers
     val helloWorldPackageParam = "tests/src/test/scala/testFixtures/helloWorldPackageParam"
     val incorrectManifestPath = "does/not/exist"
     val uselessEnvData = """{ "something": "useless" }"""
-    //val packageEnvData = "{\"PACKAGE_NAME\":\"myPackage\"}"
     val packageEnvData = """{ "PACKAGE_NAME": "myPackage" }"""
     val deployAction = "/whisk.system/deploy/wskdeploy"
+    val helloWorldAction = "openwhisk-helloworld/helloworld"
 
     //test to create the hello world blueprint from github
     "Deploy Package" should "create the hello world action from github url" in {
@@ -57,6 +57,8 @@ class DeployTests extends TestHelpers
           val logs = activation.logs.get.toString
           logs should include("Action openwhisk-helloworld/helloworld has been successfully deployed.")
         }
+        // clean up after test
+        wsk.action.delete("openwhisk-helloworld/helloworld")
     }
 
     //test to create the hello world blueprint from github with myPackage as package name
@@ -71,6 +73,8 @@ class DeployTests extends TestHelpers
           val logs = activation.logs.get.toString
           logs should include("Action myPackage/helloworld has been successfully deployed.")
         }
+        // clean up after test
+        wsk.action.delete("myPackage/helloworld")
     }
 
     //test to create a blueprint with no github repo provided
@@ -120,6 +124,8 @@ class DeployTests extends TestHelpers
           val logs = activation.logs.get.toString
           logs should include("Action openwhisk-helloworld/helloworld has been successfully deployed.")
         }
+        // clean up after test
+        wsk.action.delete("openwhisk-helloworld/helloworld")
     }
 
     //test to create a blueprint with an incorrect manifestPath provided
