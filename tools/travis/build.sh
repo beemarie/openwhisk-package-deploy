@@ -1,3 +1,4 @@
+#!/bin/bash
 # Build script for Travis-CI.
 
 SCRIPTDIR=$(cd $(dirname "$0") && pwd)
@@ -6,13 +7,14 @@ WHISKDIR="$ROOTDIR/openwhisk"
 
 cd $WHISKDIR
 
-cp $WHISKDIR/../tests/src/* $WHISKDIR/tests/src/packages/
+tools/build/scanCode.py $ROOTDIR
 
-tools/build/scanCode.py .
+# No point to continue with PRs, since encryption is on
+if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then exit 0; fi
 
 cd $WHISKDIR/ansible
 
-ANSIBLE_CMD="ansible-playbook -i environments/travis"
+ANSIBLE_CMD="ansible-playbook -i environments/local"
 
 $ANSIBLE_CMD setup.yml
 $ANSIBLE_CMD prereq.yml
@@ -25,6 +27,7 @@ cd $WHISKDIR
 
 cd $WHISKDIR/ansible
 
+$ANSIBLE_CMD wipe.yml
 $ANSIBLE_CMD openwhisk.yml
 
 cd $WHISKDIR
@@ -40,8 +43,16 @@ WSK_CLI=$WHISKDIR/bin/wsk
 AUTH_KEY=$(cat $WHISKDIR/ansible/files/auth.whisk.system)
 EDGE_HOST=$(grep '^edge.host=' $WHISKPROPS_FILE | cut -d'=' -f2)
 
-cd ${ROOTDIR}
-TERM=dumb ./gradlew :tests:test
+# Set Environment
+export OPENWHISK_HOME=$WHISKDIR
+
+# Install the package
+source $ROOTDIR/packages/installCatalog.sh $AUTH_KEY $EDGE_HOST $WSK_CLI
+
+# Test
+cd $ROOTDIR
+./gradlew :tests:test
+
 # # Install the package
 # source $WHISKDIR/../install.sh $EDGE_HOST $AUTH_KEY $WSK_CLI
 
