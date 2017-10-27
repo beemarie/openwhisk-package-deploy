@@ -52,11 +52,3 @@ source $ROOTDIR/packages/installCatalog.sh $AUTH_KEY $EDGE_HOST $WSK_CLI
 # Test
 cd $ROOTDIR
 ./gradlew :tests:test
-
-# # Install the package
-# source $WHISKDIR/../install.sh $EDGE_HOST $AUTH_KEY $WSK_CLI
-
-# #Test only the test cases classes in tests/src (Openwhisk dependencies are needed)
-# X="./gradlew :tests:test "
-# for f in $(ls $WHISKDIR/../tests/src | sed -e 's/\..*$//'); do X="$X --tests \"packages.$f\""; done
-# eval $X
