@@ -13,5 +13,5 @@
   *
   */
 function main(params) {
-	return { "message": "you sent me " + params.message };
+  return { "message": "you sent me " + params.message };
 }
